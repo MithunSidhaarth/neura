@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { useSyncExternalStore } from "react";
 import { LaidOutGraph, PositionedNeuron } from "@/lib/graph/layout";
-import { Neuron } from "@/lib/graph/types";
+import { Neuron, ConnectionType } from "@/lib/graph/types";
 import { aiChat, aiExpand, aiExplain, ChatMessage } from "@/lib/ai/client";
 
 // A small dependency-free store (no zustand/redux) so the engine has a
@@ -649,7 +649,7 @@ class Store {
         this.autoLinkSimilar(neuron.id);
     }
 
-    private addConnection(fromId: string, toId: string, type: string, weight: number) {
+    private addConnection(fromId: string, toId: string, type: ConnectionType, weight: number) {
         const from = this.graph.byId.get(fromId);
         const to = this.graph.byId.get(toId);
         if (!from || !to) return;
