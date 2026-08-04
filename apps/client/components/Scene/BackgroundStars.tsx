@@ -148,36 +148,42 @@ export default function BackgroundStars() {
             <bufferGeometry>
                 <bufferAttribute
                     attach="attributes-position"
+                    args={[positions, 3]}
                     array={positions}
                     count={positions.length / 3}
                     itemSize={3}
                 />
                 <bufferAttribute
                     attach="attributes-aSize"
+                    args={[sizes, 1]}
                     array={sizes}
                     count={sizes.length}
                     itemSize={1}
                 />
                 <bufferAttribute
                     attach="attributes-aColor"
+                    args={[colors, 3]}
                     array={colors}
                     count={colors.length / 3}
                     itemSize={3}
                 />
                 <bufferAttribute
                     attach="attributes-aBrightness"
+                    args={[brightness, 1]}
                     array={brightness}
                     count={brightness.length}
                     itemSize={1}
                 />
                 <bufferAttribute
                     attach="attributes-aTwinklePhase"
+                    args={[twinklePhase, 1]}
                     array={twinklePhase}
                     count={twinklePhase.length}
                     itemSize={1}
                 />
                 <bufferAttribute
                     attach="attributes-aTwinkleSpeed"
+                    args={[twinkleSpeed, 1]}
                     array={twinkleSpeed}
                     count={twinkleSpeed.length}
                     itemSize={1}

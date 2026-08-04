@@ -54,10 +54,7 @@ export default function ParticleField() {
         // content and should read as clearly larger than the decorative
         // BackgroundStars field even before any importance bonus is
         // applied. See NeuronMaterial.ts for the matching baseSize bump.
-        // Bumped 3.6 -> 4.2 alongside the NeuronMaterial point-size floor/
-        // depth-fade fix, so individual neurons stay legibly separate dots
-        // even when the camera is pulled all the way out.
-        const NEURON_BASE_SIZE = 4.2;
+        const NEURON_BASE_SIZE = 3.6;
         const sizeArray = new Float32Array(count).fill(NEURON_BASE_SIZE);
 
         // Dynamic sizing based on importance: how many connections touch
@@ -165,6 +162,7 @@ export default function ParticleField() {
 
                 <bufferAttribute
                     attach="attributes-position"
+                    args={[positions, 3]}
                     array={positions}
                     count={positions.length / 3}
                     itemSize={3}
@@ -172,6 +170,7 @@ export default function ParticleField() {
 
                 <bufferAttribute
                     attach="attributes-aSignal"
+                    args={[signals, 1]}
                     array={signals}
                     count={signals.length}
                     itemSize={1}
@@ -179,6 +178,7 @@ export default function ParticleField() {
 
                 <bufferAttribute
                     attach="attributes-aDim"
+                    args={[dims, 1]}
                     array={dims}
                     count={dims.length}
                     itemSize={1}
@@ -186,6 +186,7 @@ export default function ParticleField() {
 
                 <bufferAttribute
                     attach="attributes-aSize"
+                    args={[sizes, 1]}
                     array={sizes}
                     count={sizes.length}
                     itemSize={1}

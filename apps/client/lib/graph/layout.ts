@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { GraphData, Neuron } from "./types";
+import { ConnectionType, GraphData, Neuron } from "./types";
 
 export interface PositionedNeuron {
     neuron: Neuron;
@@ -9,7 +9,7 @@ export interface PositionedNeuron {
 export interface PositionedConnection {
     from: PositionedNeuron;
     to: PositionedNeuron;
-    type: string;
+    type: ConnectionType;
     weight: number;
 }
 

@@ -62,6 +62,7 @@ export default function DustLayer() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
+          args={[positions, 3]}
           array={positions}
           count={positions.length / 3}
           itemSize={3}

@@ -28,16 +28,6 @@ interface WebResult {
     source?: string;
 }
 
-interface ImageResult {
-    title: string;
-    image: string;
-    thumbnail: string;
-    url: string;
-    source?: string;
-    width?: number;
-    height?: number;
-}
-
 const DDG_HTML = "https://html.duckduckgo.com/html/";
 // Lighter-weight sibling endpoint DDG serves to old/text browsers. Its bot
 // checks and rate limits are handled independently from html.duckduckgo.com,
@@ -216,97 +206,15 @@ async function ddgSearch(query: string, limit: number): Promise<WebResult[]> {
     return ddgLiteSearch(query, limit);
 }
 
-// ------------------------------------------------------------------------
-// Image search. Every text search the app makes should come back with a
-// visual complement, not just a list of blue links -- this backs the
-// InfoPanel's "Images" strip.
-//
-// DuckDuckGo's image results live behind a separate, undocumented JSON
-// endpoint (i.js) that requires a short-lived "vqd" token minted per query.
-// The token is embedded in the plain HTML of a normal duckduckgo.com
-// results page, so this is a two-step scrape: fetch the HTML page to pull
-// the token out, then call i.js with it. Same "degrade gracefully" contract
-// as the web/video search above -- any failure at either step just yields
-// an empty images array (200, not an error) rather than breaking the rest
-// of the response.
-async function fetchVqd(query: string): Promise<string | null> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    try {
-        const res = await fetch(
-            `https://duckduckgo.com/?q=${encodeURIComponent(query)}&iar=images&iax=images&ia=images`,
-            { headers: COMMON_HEADERS, signal: controller.signal, cache: "no-store" }
-        );
-        if (!res.ok) return null;
-        const html = await res.text();
-        const match = html.match(/vqd=['"]?([\d-]+)['"]?/);
-        return match ? match[1] : null;
-    } catch {
-        return null;
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
-async function ddgImageSearch(query: string, limit: number): Promise<ImageResult[]> {
-    const vqd = await fetchVqd(query);
-    if (!vqd) return [];
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-
-    try {
-        const res = await fetch(
-            `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(query)}&vqd=${vqd}&f=,,,&p=1`,
-            {
-                headers: {
-                    ...COMMON_HEADERS,
-                    Referer: "https://duckduckgo.com/",
-                },
-                signal: controller.signal,
-                cache: "no-store",
-            }
-        );
-        if (!res.ok) return [];
-
-        const json = await res.json().catch(() => null);
-        const rawResults = Array.isArray(json?.results) ? json.results : [];
-
-        const out: ImageResult[] = [];
-        for (const r of rawResults) {
-            if (out.length >= limit) break;
-            const image = typeof r?.image === "string" ? r.image : "";
-            const url = typeof r?.url === "string" ? r.url : "";
-            if (!image || !url) continue;
-            out.push({
-                title: typeof r?.title === "string" ? r.title : "",
-                image,
-                thumbnail: typeof r?.thumbnail === "string" ? r.thumbnail : image,
-                url,
-                source: typeof r?.source === "string" ? r.source : hostnameOf(url),
-                width: typeof r?.width === "number" ? r.width : undefined,
-                height: typeof r?.height === "number" ? r.height : undefined,
-            });
-        }
-        return out;
-    } catch {
-        return [];
-    } finally {
-        clearTimeout(timeout);
-    }
-}
-
 export async function GET(req: NextRequest) {
     const q = (req.nextUrl.searchParams.get("q") ?? "").trim();
     if (!q) return NextResponse.json({ error: "Missing query." }, { status: 400 });
 
-    // Run the general query, a YouTube-scoped query, and an image query in
-    // parallel so one slow/failed leg doesn't block the others.
-    const [general, videoRaw, images] = await Promise.all([
+    // Run the general query and a YouTube-scoped query in parallel so one
+    // slow/failed leg doesn't block the other.
+    const [general, videoRaw] = await Promise.all([
         ddgSearch(q, 6),
         ddgSearch(`${q} site:youtube.com/watch`, 6),
-        ddgImageSearch(q, 9),
     ]);
 
     // Some general results may already be YouTube links -- keep the web
@@ -317,5 +225,5 @@ export async function GET(req: NextRequest) {
         .filter((r) => /youtube\.com\/watch|youtu\.be\//i.test(r.url))
         .slice(0, 4);
 
-    return NextResponse.json({ web, videos, images });
+    return NextResponse.json({ web, videos });
 }

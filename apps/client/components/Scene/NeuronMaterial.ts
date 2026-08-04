@@ -129,16 +129,8 @@ export function createNeuronMaterial() {
                 // Lowered the max clamp and the scale constant so particles that drift close to
                 // the camera (galaxy radius > camera distance, so this does happen) settle into a
                 // soft, bloom-friendly size instead of maxing out into a blown-out disc.
-                //
-                // Floor raised from 1.0 -> 3.2px: at the camera's max zoom-out distance (320,
-                // see CameraRig's MAX_DIST) the old 1px floor combined with the 140 scale
-                // constant meant neurons shrank to sub-2px specks that were functionally
-                // invisible next to the background dust/star layers -- the graph itself
-                // "disappeared" exactly when you zoomed out to see the whole thing. Neurons are
-                // the actual content; they should read as individually visible dots at any zoom
-                // level the camera allows, not just up close.
                 float baseSize = (3.4 + energy * 3.2) * mix(0.6, 1.0, aDim) * aSize;
-                gl_PointSize = clamp(baseSize * (170.0 / vViewZ), 3.2, 52.0);
+                gl_PointSize = clamp(baseSize * (140.0 / vViewZ), 1.0, 48.0);
             }
         `,
         fragmentShader: `
@@ -158,10 +150,7 @@ export function createNeuronMaterial() {
             // Nudged toward graphite/silver with a touch of cyan on the active state,
             // per the brief's palette (deep black, graphite, blue-white, silver, subtle cyan —
             // no saturated blue, no neon).
-            // Sleep color brightened slightly (was 0.34/0.38/0.44) so idle neurons still
-            // read as distinct graphite-silver dots against the dark background/other
-            // decorative layers, rather than only popping once something lights them up.
-            const vec3 SLEEP_COLOR = vec3(0.42, 0.47, 0.53);
+            const vec3 SLEEP_COLOR = vec3(0.34, 0.38, 0.44);
             const vec3 ACTIVE_COLOR = vec3(0.72, 0.92, 0.98);
             const vec3 AWAKE_COLOR = vec3(1.0, 1.0, 1.0);
 
@@ -221,15 +210,7 @@ export function createNeuronMaterial() {
                 // Fades out gracefully in the distance, and prevents popping near near-clip plane.
                 // Widened the near fade-in range so particles drifting close to the camera ease in
                 // gradually instead of visibly "popping" once they cross a hard threshold.
-                //
-                // Range pushed out from (150, 350) -> (900, 1600): the camera's own max zoom-out
-                // distance is 320 (CameraRig's MAX_DIST), which sat almost exactly inside the old
-                // fade window -- so pulling all the way out was silently fading every neuron down
-                // to near-zero alpha at the same time the point-size shrank, and the whole graph
-                // read as "gone." This fade should only kick in well past anything the camera can
-                // actually reach, so neurons stay visible and distinct from the decorative
-                // background layers across the entire usable zoom range.
-                float depthFadeOut = 1.0 - smoothstep(900.0, 1600.0, vViewZ);
+                float depthFadeOut = 1.0 - smoothstep(150.0, 350.0, vViewZ);
                 float cameraFadeIn = smoothstep(1.0, 26.0, vViewZ);
                 alpha *= depthFadeOut * cameraFadeIn;
                 

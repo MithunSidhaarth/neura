@@ -9,20 +9,9 @@ export interface WebResult {
     source?: string;
 }
 
-export interface ImageResult {
-    title: string;
-    image: string;
-    thumbnail: string;
-    url: string;
-    source?: string;
-    width?: number;
-    height?: number;
-}
-
 export interface WebSearchResponse {
     web: WebResult[];
     videos: WebResult[];
-    images: ImageResult[];
 }
 
 export async function webSearch(query: string): Promise<WebSearchResponse> {
@@ -34,7 +23,6 @@ export async function webSearch(query: string): Promise<WebSearchResponse> {
     return {
         web: Array.isArray(data.web) ? data.web : [],
         videos: Array.isArray(data.videos) ? data.videos : [],
-        images: Array.isArray(data.images) ? data.images : [],
     };
 }
 

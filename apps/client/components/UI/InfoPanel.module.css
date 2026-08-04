@@ -257,40 +257,6 @@
     cursor: default;
 }
 
-.imageGrid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    margin-bottom: 12px;
-}
-
-.imageItem {
-    display: block;
-    position: relative;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    transition: border-color 0.15s ease;
-}
-
-.imageItem:hover {
-    border-color: rgba(140, 210, 230, 0.35);
-}
-
-.imageItem img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.2s ease;
-}
-
-.imageItem:hover img {
-    transform: scale(1.06);
-}
-
 .webList {
     display: flex;
     flex-direction: column;

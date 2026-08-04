@@ -249,34 +249,6 @@ export default function InfoPanel() {
                         <div className={styles.wikiEmpty}>Couldn&apos;t reach the web just now.</div>
                     )}
 
-                    {web && web.images.length > 0 && (
-                        <div className={styles.imageGrid}>
-                            {web.images.map((img, i) => (
-                                <a
-                                    key={i}
-                                    className={styles.imageItem}
-                                    href={img.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    title={img.title}
-                                >
-                                    <img
-                                        src={img.thumbnail || img.image}
-                                        alt={img.title}
-                                        loading="lazy"
-                                        referrerPolicy="no-referrer"
-                                        onError={(e) => {
-                                            // Hotlinked thumbnails occasionally 404/expire --
-                                            // hide the tile rather than show a broken-image icon.
-                                            const el = e.currentTarget.closest("a") as HTMLElement | null;
-                                            if (el) el.style.display = "none";
-                                        }}
-                                    />
-                                </a>
-                            ))}
-                        </div>
-                    )}
-
                     {web && web.web.length > 0 && (
                         <div className={styles.webList}>
                             {web.web.map((r, i) => (
@@ -315,14 +287,9 @@ export default function InfoPanel() {
                         </div>
                     )}
 
-                    {web &&
-                        web.web.length === 0 &&
-                        web.videos.length === 0 &&
-                        web.images.length === 0 &&
-                        !webLoading &&
-                        !webError && (
-                            <div className={styles.wikiEmpty}>No web results found.</div>
-                        )}
+                    {web && web.web.length === 0 && web.videos.length === 0 && !webLoading && !webError && (
+                        <div className={styles.wikiEmpty}>No web results found.</div>
+                    )}
 
                     {/* Always available regardless of scraping success --
                         real, immediate traversal to the open web from any

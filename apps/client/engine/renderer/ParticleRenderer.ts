@@ -348,23 +348,19 @@ void main(){
         }
 
         (
-            this.geometry.attributes.position
-            as THREE.BufferAttribute
+            this.geometry.attributes.position as THREE.BufferAttribute
         ).needsUpdate = true;
 
         (
-            this.geometry.attributes.aSize
-            as THREE.BufferAttribute
+            this.geometry.attributes.aSize as THREE.BufferAttribute
         ).needsUpdate = true;
 
         (
-            this.geometry.attributes.aOpacity
-            as THREE.BufferAttribute
+            this.geometry.attributes.aOpacity as THREE.BufferAttribute
         ).needsUpdate = true;
 
         (
-            this.geometry.attributes.aColor
-            as THREE.BufferAttribute
+            this.geometry.attributes.aColor as THREE.BufferAttribute
         ).needsUpdate = true;
 
     }

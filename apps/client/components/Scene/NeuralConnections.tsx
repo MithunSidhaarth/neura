@@ -290,6 +290,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-position"
+                    args={[positions, 3]}
                     array={positions}
                     count={positions.length / 3}
                     itemSize={3}
@@ -297,6 +298,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-aProgress"
+                    args={[progress, 1]}
                     array={progress}
                     count={progress.length}
                     itemSize={1}
@@ -304,6 +306,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-aPhase"
+                    args={[phase, 1]}
                     array={phase}
                     count={phase.length}
                     itemSize={1}
@@ -311,6 +314,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-aSpeed"
+                    args={[speed, 1]}
                     array={speed}
                     count={speed.length}
                     itemSize={1}
@@ -318,6 +322,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-aDelay"
+                    args={[delay, 1]}
                     array={delay}
                     count={delay.length}
                     itemSize={1}
@@ -325,6 +330,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-aActive"
+                    args={[active, 1]}
                     array={active}
                     count={active.length}
                     itemSize={1}
@@ -332,6 +338,7 @@ export default function NeuralConnections() {
 
                 <bufferAttribute
                     attach="attributes-aDim"
+                    args={[dim, 1]}
                     array={dim}
                     count={dim.length}
                     itemSize={1}
