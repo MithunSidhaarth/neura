@@ -1,0 +1,58 @@
+.wrapper {
+    position: fixed;
+    top: 112px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 19;
+    max-width: min(720px, 92vw);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 7px 14px;
+    background: rgba(12, 14, 18, 0.4);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    pointer-events: auto;
+}
+
+.crumbGroup {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.crumb {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: rgba(190, 210, 225, 0.5);
+    padding: 3px 6px;
+    border-radius: 6px;
+    transition: background 0.12s ease, color 0.12s ease;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.crumb:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(225, 235, 240, 0.85);
+}
+
+.current {
+    color: rgba(160, 220, 235, 0.9);
+    cursor: default;
+}
+
+.sep {
+    color: rgba(190, 210, 225, 0.25);
+    font-size: 11px;
+}

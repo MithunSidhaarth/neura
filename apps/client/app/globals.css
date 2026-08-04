@@ -1,0 +1,40 @@
+﻿@import "tailwindcss";
+
+html,
+body{
+
+    margin:0;
+    padding:0;
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    background:#020202;
+
+    /* The custom Cursor component (components/UI/Cursor.tsx) replaces the
+       OS pointer everywhere, not just over the canvas -- on touch/coarse
+       pointers it disables itself and this falls back to `auto` via the
+       media query below. */
+    cursor:none;
+
+}
+
+@media (pointer: coarse) {
+    html, body {
+        cursor: auto;
+    }
+}
+
+*{
+
+    box-sizing:border-box;
+
+}
+
+canvas{
+
+    display:block;
+
+}

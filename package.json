@@ -1,0 +1,26 @@
+{
+  "name": "mnemosyne",
+  "private": true,
+  "packageManager": "yarn@4.5.3",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo build"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.7.0",
+    "@react-three/postprocessing": "^3.0.4",
+    "postprocessing": "^6.39.4",
+    "three": "^0.185.1"
+  },
+  "resolutions": {
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  }
+}

@@ -1,0 +1,50 @@
+.ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(160, 220, 235, 0.55);
+    pointer-events: none;
+    z-index: 9999;
+    will-change: transform, width, height, opacity;
+    transition: width 0.18s ease, height 0.18s ease, border-color 0.18s ease,
+        opacity 0.18s ease, background 0.18s ease;
+    mix-blend-mode: screen;
+}
+
+.ring::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(140, 210, 230, 0.18), transparent 70%);
+}
+
+.ring.hover {
+    width: 52px;
+    height: 52px;
+    border-color: rgba(190, 235, 245, 0.85);
+    background: rgba(140, 210, 230, 0.06);
+}
+
+.ring.active {
+    width: 24px;
+    height: 24px;
+    border-color: rgba(235, 250, 255, 0.95);
+}
+
+.dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(220, 240, 248, 0.95);
+    box-shadow: 0 0 8px rgba(160, 220, 235, 0.9);
+    pointer-events: none;
+    z-index: 9999;
+    will-change: transform;
+}

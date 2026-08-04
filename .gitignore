@@ -1,0 +1,120 @@
+# ==========================
+# Dependencies
+# ==========================
+node_modules/
+
+# Package managers
+.pnpm-store/
+.npm/
+
+# Yarn
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.yarn/cache/
+.yarn/unplugged/
+.yarn/install-state.gz
+.yarn/build-state.yml
+
+# ==========================
+# Next.js
+# ==========================
+.next/
+out/
+
+# ==========================
+# Turbo
+# ==========================
+.turbo/
+
+# ==========================
+# Build outputs
+# ==========================
+dist/
+build/
+coverage/
+storybook-static/
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==========================
+# Environment variables
+# ==========================
+.env
+.env.*
+!.env.example
+
+# ==========================
+# IDE
+# ==========================
+.vscode/
+.idea/
+
+# ==========================
+# OS files
+# ==========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================
+# Temporary
+# ==========================
+tmp/
+temp/
+.cache/
+.parcel-cache/
+.eslintcache
+
+# ==========================
+# TypeScript
+# ==========================
+*.tsbuildinfo
+
+# ==========================
+# Vercel / Netlify
+# ==========================
+.vercel/
+.netlify/
+
+# ==========================
+# Archives
+# ==========================
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+
+# ==========================
+# Binary assets (optional)
+# Uncomment if you don't want to store these
+# ==========================
+# *.psd
+# *.blend
+# *.fbx
+# *.obj
+# *.stl
+
+# ==========================
+# Local database
+# ==========================
+*.sqlite
+*.db
+
+# ==========================
+# Misc
+# ==========================
+*.pid
+*.seed
+*.orig

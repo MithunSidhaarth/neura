@@ -1,0 +1,358 @@
+/* A dedicated column along the right edge, sized to roughly a third of
+   the viewport (with sane min/max so it doesn't collapse on narrow
+   windows or balloon on ultrawide ones) rather than a floating card. */
+.wrapper {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100dvh;
+    width: min(33.333vw, 520px);
+    min-width: 360px;
+    max-width: 92vw;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 20px 20px 20px 0;
+    pointer-events: none;
+    z-index: 15;
+}
+
+.panel {
+    position: relative;
+    pointer-events: auto;
+    background: rgba(12, 14, 18, 0.55);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 34px 30px 30px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        -30px 0 80px rgba(0, 0, 0, 0.45);
+
+    animation: rise 0.35s ease;
+}
+
+@keyframes rise {
+    from { opacity: 0; transform: translateX(18px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Below tablet width the side column stops making sense -- fall back to
+   a bottom sheet like before so it never eats the whole screen. */
+@media (max-width: 760px) {
+    .wrapper {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: auto;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        padding: 0 16px 16px;
+        justify-content: center;
+    }
+
+    .panel {
+        width: 100%;
+        max-width: 560px;
+        height: auto;
+        max-height: 72dvh;
+        border-radius: 20px;
+    }
+}
+
+.close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: rgba(190, 210, 225, 0.55);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: rgba(235, 242, 248, 0.92);
+}
+
+.eyebrow {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(140, 210, 230, 0.7);
+    margin-bottom: 10px;
+}
+
+.title {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 25px;
+    font-weight: 500;
+    color: rgba(235, 242, 248, 0.95);
+    margin-bottom: 12px;
+    padding-right: 20px;
+}
+
+.description {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: rgba(210, 220, 230, 0.85);
+    margin-bottom: 16px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 18px;
+}
+
+.tag {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: rgba(190, 210, 225, 0.65);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 999px;
+    padding: 5px 11px;
+}
+
+.connections {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 12px;
+}
+
+.connectionsHint {
+    text-transform: none;
+    letter-spacing: normal;
+    color: rgba(140, 210, 230, 0.5);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 10.5px;
+}
+
+.connectionsHeading {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(190, 210, 225, 0.5);
+    margin-bottom: 8px;
+}
+
+.connection {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 1px;
+    padding: 7px 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.connection:hover .connectionTitle {
+    color: rgba(140, 220, 235, 0.95);
+}
+
+.connectionType {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(190, 210, 225, 0.45);
+}
+
+.connectionTitle {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 14px;
+    color: rgba(220, 230, 238, 0.85);
+    transition: color 0.15s ease;
+}
+
+.wiki {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+    margin-bottom: 16px;
+}
+
+.wikiHeading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(190, 210, 225, 0.5);
+    margin-bottom: 8px;
+}
+
+.wikiExtract {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: rgba(210, 220, 230, 0.78);
+    margin-bottom: 8px;
+}
+
+.wikiLink {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 12.5px;
+    color: rgba(140, 210, 230, 0.85);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wikiLink:hover {
+    color: rgba(170, 225, 240, 1);
+    text-decoration: underline;
+}
+
+.wikiLoading,
+.wikiEmpty {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 12.5px;
+    color: rgba(190, 210, 225, 0.4);
+    font-style: italic;
+}
+
+.aiBadge {
+    color: rgba(140, 210, 230, 0.6);
+}
+
+.aiAction {
+    align-self: flex-start;
+    margin: 4px 0 12px;
+    padding: 8px 14px;
+    background: rgba(140, 210, 230, 0.1);
+    border: 1px solid rgba(140, 210, 230, 0.18);
+    border-radius: 10px;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 12.5px;
+    color: rgba(190, 230, 240, 0.9);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.aiAction:hover:not(:disabled) {
+    background: rgba(140, 210, 230, 0.18);
+}
+
+.aiAction:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.imageGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.imageItem {
+    display: block;
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: border-color 0.15s ease;
+}
+
+.imageItem:hover {
+    border-color: rgba(140, 210, 230, 0.35);
+}
+
+.imageItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.imageItem:hover img {
+    transform: scale(1.06);
+}
+
+.webList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.webItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.webItem:hover {
+    background: rgba(140, 210, 230, 0.08);
+    border-color: rgba(140, 210, 230, 0.18);
+}
+
+.webItemTitle {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    color: rgba(220, 230, 238, 0.9);
+}
+
+.webItem:hover .webItemTitle {
+    color: rgba(160, 225, 240, 0.98);
+}
+
+.webItemSource {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    color: rgba(140, 210, 230, 0.55);
+}
+
+.webItemSnippet {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(190, 205, 218, 0.6);
+}
+
+.videoTag {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    color: rgba(230, 160, 170, 0.75);
+    margin-right: 6px;
+}
+
+.webQuick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
