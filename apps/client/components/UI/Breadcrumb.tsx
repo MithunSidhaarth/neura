@@ -9,9 +9,9 @@ import { engineStore, useEngineState } from "@/engine/store/EngineStore";
 // visit counts (which do persist) are a separate concept.
 export default function Breadcrumb() {
 
-    const { history, selectedId } = useEngineState();
+    const { history, selectedId, debateModeOpen } = useEngineState();
 
-    if (history.length < 2) return null;
+    if (debateModeOpen || history.length < 2) return null;
 
     return (
         <div className={styles.wrapper}>

@@ -5,6 +5,7 @@ import NeuronTooltip from "@/components/UI/NeuronTooltip";
 import Breadcrumb from "@/components/UI/Breadcrumb";
 import Dock from "@/components/UI/Dock";
 import ChatPanel from "@/components/UI/ChatPanel";
+import DebateSky from "@/components/UI/DebateSky";
 import CommandPalette from "@/components/UI/CommandPalette";
 import ContextMenu from "@/components/UI/ContextMenu";
 
@@ -17,6 +18,7 @@ export default function Home() {
             <Breadcrumb />
             <Dock />
             <ChatPanel />
+            <DebateSky />
             <CommandPalette />
             <ContextMenu />
             <NeuronTooltip />

@@ -1,0 +1,410 @@
+.stage {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    pointer-events: none;
+    overflow: hidden;
+    animation: stageIn 0.4s ease both;
+}
+
+@keyframes stageIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Darkens the edges so text reads cleanly over the starfield/nebula
+   without needing heavy per-line blur -- the "wow" comes from the scene
+   glow (Nebula/AuroraLayer) plus this frame, not from the text itself
+   trying to do all the work. */
+.vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 35%, rgba(4, 5, 8, 0.55) 100%);
+    z-index: 25;
+}
+
+/* ---- Center divider: purely visual, reinforces "two sides" ---- */
+
+.beam {
+    position: fixed;
+    left: 50%;
+    top: 16%;
+    bottom: 150px;
+    width: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.18) 12%,
+        rgba(255, 255, 255, 0.18) 88%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    box-shadow: -10px 0 40px rgba(255, 47, 176, 0.10), 10px 0 40px rgba(22, 224, 255, 0.10);
+    z-index: 26;
+    animation: fadeIn 0.6s ease both;
+}
+
+.pulseOrb {
+    position: fixed;
+    top: 46%;
+    left: 50%;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    filter: blur(50px);
+    z-index: 24;
+    opacity: 0.16;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.25, 1), background 0.7s ease;
+}
+
+.pulseOrbFor {
+    transform: translate(-135%, -50%);
+    background: radial-gradient(circle, #ff2fb0, transparent 70%);
+}
+
+.pulseOrbAgainst {
+    transform: translate(35%, -50%);
+    background: radial-gradient(circle, #16e0ff, transparent 70%);
+}
+
+.pulseOrbActive {
+    animation: orbPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes orbPulse {
+    0%, 100% { opacity: 0.14; }
+    50% { opacity: 0.30; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ---- Columns: fixed boxes, overflow-hidden -- lines never unmount,
+   they just scroll out of frame at the top as new ones settle at the
+   bottom. Nothing pops, nothing reflows. ---- */
+
+.columnFor,
+.columnAgainst {
+    position: fixed;
+    top: 16%;
+    bottom: 150px;
+    width: min(37vw, 460px);
+    z-index: 27;
+}
+
+.columnFor {
+    left: 5%;
+}
+
+.columnAgainst {
+    right: 5%;
+}
+
+.columnInner {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 28px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 100%);
+    mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 100%);
+}
+
+.lineFor,
+.lineAgainst {
+    margin: 0;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: clamp(15px, 1.3vw, 19px);
+    font-weight: 500;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+    padding: 2px 0 2px 16px;
+    animation: settle 0.5s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+
+.lineFor {
+    text-align: left;
+    color: rgba(255, 214, 240, 0.96);
+    border-left: 2px solid rgba(255, 47, 176, 0.45);
+    text-shadow: 0 0 14px rgba(255, 47, 176, 0.28);
+}
+
+.lineAgainst {
+    text-align: right;
+    padding-left: 0;
+    padding-right: 16px;
+    border-left: none;
+    border-right: 2px solid rgba(22, 224, 255, 0.45);
+    color: rgba(210, 248, 255, 0.96);
+    text-shadow: 0 0 14px rgba(22, 224, 255, 0.28);
+}
+
+@keyframes settle {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tag {
+    display: block;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    opacity: 0.55;
+    margin-bottom: 3px;
+    animation: none;
+}
+
+.pending {
+    opacity: 0.95;
+}
+
+.pending.lineFor { border-left-color: rgba(255, 47, 176, 0.85); }
+.pending.lineAgainst { border-right-color: rgba(22, 224, 255, 0.85); }
+
+.typing {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+    height: 16px;
+}
+
+.typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.75;
+    animation: bounce 1s infinite ease-in-out;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.15s; }
+.typing span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ---- Center title card (before a debate has started) ---- */
+
+.centerCard {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 28;
+    pointer-events: auto;
+    width: min(520px, 88vw);
+    text-align: center;
+    background: rgba(12, 14, 18, 0.5);
+    backdrop-filter: blur(26px) saturate(150%);
+    -webkit-backdrop-filter: blur(26px) saturate(150%);
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 40px 40px 32px;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 30px 90px rgba(0, 0, 0, 0.55),
+        0 0 90px rgba(255, 47, 176, 0.08),
+        0 0 90px rgba(22, 224, 255, 0.08);
+    animation: cardIn 0.5s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translate(-50%, -46%) scale(0.97); }
+    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.centerEyebrow {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    color: rgba(190, 210, 225, 0.6);
+    margin-bottom: 14px;
+}
+
+.centerTitle {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: rgba(240, 246, 252, 0.96);
+    margin-bottom: 26px;
+}
+
+.starter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 6px 6px 6px 18px;
+}
+
+.input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    min-width: 0;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 14px;
+    color: rgba(235, 242, 248, 0.95);
+}
+
+.input::placeholder {
+    color: rgba(190, 210, 225, 0.4);
+}
+
+.go {
+    flex: none;
+    padding: 0 20px;
+    height: 36px;
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(90deg, #ff2fb0, #16e0ff);
+    color: rgba(8, 8, 10, 0.92);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+.go:hover:not(:disabled) { filter: brightness(1.12); }
+.go:disabled { opacity: 0.35; cursor: default; }
+
+.centerLegend {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+}
+
+.legendFor { color: #ff8fd4; }
+.legendAgainst { color: #7fefff; }
+.legendVs { color: rgba(190, 210, 225, 0.4); }
+
+/* ---- Live HUD pill (once a debate has started) ---- */
+
+.hud {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 29;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+    background: rgba(12, 14, 18, 0.55);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    padding: 8px 8px 8px 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(255, 47, 176, 0.08), 0 0 40px rgba(22, 224, 255, 0.08);
+    max-width: min(70vw, 640px);
+    animation: fadeIn 0.4s ease both;
+}
+
+.sideTag,
+.sideTagAgainst {
+    flex: none;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+}
+
+.sideTag { color: #ff8fd4; background: rgba(255, 47, 176, 0.12); }
+.sideTagAgainst { color: #7fefff; background: rgba(22, 224, 255, 0.12); }
+
+.topicText {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 13px;
+    color: rgba(235, 242, 248, 0.9);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.stop {
+    flex: none;
+    padding: 0 14px;
+    height: 28px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(225, 235, 240, 0.85);
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 11.5px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.stop:hover { background: rgba(255, 255, 255, 0.12); }
+
+/* ---- Exit -- own corner, never competes with the HUD pill ---- */
+
+.exit {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 29;
+    pointer-events: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(12, 14, 18, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: rgba(190, 210, 225, 0.7);
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.exit:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(235, 242, 248, 0.95);
+}
+
+.error {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 29;
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 12px;
+    color: rgba(235, 160, 160, 0.9);
+    background: rgba(20, 12, 12, 0.6);
+    backdrop-filter: blur(16px);
+    border-radius: 10px;
+    padding: 8px 14px;
+    pointer-events: none;
+}
+
+@media (max-width: 760px) {
+    .columnFor, .columnAgainst { width: 43vw; top: 20%; bottom: 160px; }
+    .lineFor, .lineAgainst { font-size: 13px; }
+    .topicText { max-width: 34vw; }
+    .centerCard { padding: 30px 24px 26px; }
+    .beam, .pulseOrb { display: none; }
+}

@@ -130,7 +130,7 @@ function useWebSearch(title: string | undefined): {
 // vision doc, made visible instead of just implied by a line.
 export default function InfoPanel() {
 
-    const { selectedId, expanding, aiExpanding, explainingId, explainError } = useEngineState();
+    const { selectedId, expanding, aiExpanding, explainingId, explainError, debating, debateError } = useEngineState();
     const { graph } = engineStore;
     const node = selectedId ? graph.byId.get(selectedId) : undefined;
 
@@ -199,8 +199,22 @@ export default function InfoPanel() {
                         disabled={!!aiExpanding}
                         onClick={() => engineStore.aiExpandTopic(node.neuron.wikiTitle ?? node.neuron.title, selectedId)}
                     >
-                        {aiExpanding ? "Expanding…" : "Expand with AI"}
+                        {aiExpanding ? "Searching…" : "Search with AI"}
                     </button>
+                )}
+
+                {!node.neuron.stance && (
+                    <button
+                        className={styles.aiAction}
+                        disabled={!!debating}
+                        onClick={() => engineStore.debateTopic(node.neuron.wikiTitle ?? node.neuron.title, selectedId)}
+                    >
+                        {debating ? "Expanding topic…" : "Expand topic with AI"}
+                    </button>
+                )}
+
+                {debateError && !debating && (
+                    <div className={styles.wikiLoading}>{debateError}</div>
                 )}
 
                 {directWikiUrl && (

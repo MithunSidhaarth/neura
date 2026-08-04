@@ -4,7 +4,26 @@ import * as THREE from "three";
 import { useSyncExternalStore } from "react";
 import { LaidOutGraph, PositionedNeuron } from "@/lib/graph/layout";
 import { Neuron, ConnectionType } from "@/lib/graph/types";
-import { aiChat, aiExpand, aiExplain, ChatMessage } from "@/lib/ai/client";
+import { aiChat, aiDebate, aiDebateTurn, aiExpand, aiExplain, ChatMessage } from "@/lib/ai/client";
+
+// Colors for "Debate with AI" claim/rebuttal neurons and their conflict
+// edges -- module constants (not derived from anything) so the scene
+// layer and the store agree on the palette without importing from each
+// other.
+const CLAIM_COLOR = "#ff2fb0";
+const REBUTTAL_COLOR = "#16e0ff";
+
+// Same palette, reused for live "Debate Mode" (see below) so the whole
+// app has one consistent visual language for "the assertive side" vs
+// "the opposing side" -- graph neurons, chat bubbles, and the scene glow
+// all agree on what pink and cyan mean.
+export const DEBATE_FOR_COLOR = CLAIM_COLOR;
+export const DEBATE_AGAINST_COLOR = REBUTTAL_COLOR;
+
+export interface DebateTurn {
+    agent: "for" | "against";
+    text: string;
+}
 
 // A small dependency-free store (no zustand/redux) so the engine has a
 // single source of truth for "what's selected / searched / visited" that
@@ -41,6 +60,12 @@ export interface EngineState {
     explainingId: string | null;
     explainError: string | null;
 
+    // "Debate with AI" generation in flight -- separate from aiExpanding
+    // since they're triggered by different buttons and can be in flight
+    // independently.
+    debating: string | null;
+    debateError: string | null;
+
     // Breadcrumb trail of the last few selected neurons, most recent last.
     history: string[];
 
@@ -58,6 +83,21 @@ export interface EngineState {
 
     // Right-click context menu on a neuron: null when closed.
     contextMenu: { id: string; x: number; y: number } | null;
+
+    // "Debate Mode" -- toolbar mode where two AI agents (Groq's main
+    // model arguing for the topic, a second Groq model arguing against
+    // it) go back and forth live, turn by turn, rather than the one-shot
+    // claim/rebuttal pairs `debateTopic()` drops onto the graph.
+    debateModeOpen: boolean;
+    debateModeTopic: string;
+    debateModeLog: DebateTurn[];
+    debateModeRunning: boolean;
+    debateModeError: string | null;
+    // Which side spoke most recently, and when (epoch ms) -- read every
+    // frame by the nebula/aurora shaders to pulse the whole scene pink
+    // or cyan as the debate swings, then fade back to the base palette.
+    debateGlowSide: "for" | "against" | null;
+    debateGlowAt: number;
 }
 
 const STORAGE_KEY = "neura.visitCounts";
@@ -236,6 +276,8 @@ class Store {
         aiExpandError: null,
         explainingId: null,
         explainError: null,
+        debating: null,
+        debateError: null,
         history: [],
         recentSearches: loadRecentSearches(),
         chatOpen: false,
@@ -244,7 +286,18 @@ class Store {
         chatError: null,
         commandPaletteOpen: false,
         contextMenu: null,
+        debateModeOpen: false,
+        debateModeTopic: "",
+        debateModeLog: [],
+        debateModeRunning: false,
+        debateModeError: null,
+        debateGlowSide: null,
+        debateGlowAt: 0,
     };
+
+    // Bumped on every start/stop so an in-flight debate loop can tell it's
+    // been superseded and quit instead of racing a newer one.
+    private debateRunToken = 0;
 
     private listeners = new Set<() => void>();
 
@@ -329,6 +382,11 @@ class Store {
     }
 
     select(id: string | null) {
+        // Debate Mode takes over the screen deliberately (see
+        // `toggleDebateMode`) -- ignore stray picks on the 3D scene
+        // underneath it so a click can't reopen InfoPanel and collide
+        // with the debate overlay while it's up.
+        if (id && this.state.debateModeOpen) return;
         if (id) {
             const counts = {
                 ...this.state.visitCounts,
@@ -552,10 +610,135 @@ class Store {
         }
     }
 
+    // "Debate with AI": stakes out 3-4 claims about a topic (Groq) and
+    // has a second Groq model rebut each one directly, then drops each claim/
+    // rebuttal as its own neuron pair -- mirrored across the topic in
+    // opposing arcs -- linked by a "conflict" edge.
+    // Same-side neurons (all claims, all rebuttals) are then interlinked
+    // with each other via "allied" edges so each side reads as its own
+    // connected cluster of same-colored neurons, not just spokes off the
+    // center. Same shape as aiExpandTopic (create center if new, then
+    // children + edges) but produces two colored, opposed neurons per
+    // generated item instead of one.
+    //
+    // Internally still called "debate" (this is the same claim/rebuttal
+    // mechanism as live Debate Mode below) -- only the InfoPanel button
+    // label changed to "Expand topic with AI".
+    async debateTopic(rawTitle: string, originId?: string) {
+        const title = rawTitle.trim();
+        if (!title) return;
+        if (!originId) this.recordSearch(title);
+
+        const id = wikiId(title);
+        const existing = this.graph.byId.get(id);
+        if (existing && !originId) {
+            this.select(id);
+        }
+
+        this.set({ debating: title, debateError: null });
+
+        try {
+            const centerId = originId ?? id;
+
+            if (!existing) {
+                this.addNeuron(
+                    {
+                        id,
+                        title,
+                        type: "idea",
+                        domain: "Debated",
+                        tags: [],
+                        description: "",
+                        origin: "ai",
+                    },
+                    this.spawnPosition(originId)
+                );
+            }
+
+            const { pairs } = await aiDebate(title);
+            const center = this.graph.byId.get(centerId);
+
+            // Collected as we go so every claim and every rebuttal can be
+            // interlinked with its own side after the loop below --
+            // "for" neurons form one connected cluster, "against"
+            // neurons form the other.
+            const claimIds: string[] = [];
+            const rebuttalIds: string[] = [];
+
+            pairs.forEach((pair, i) => {
+                const claimId = wikiId(`${title}::claim::${i}::${pair.title}`);
+                const rebuttalId = wikiId(`${title}::rebuttal::${i}::${pair.title}`);
+                const { claimPos, rebuttalPos } = this.duoPosition(center?.position, i, pairs.length);
+
+                if (!this.graph.byId.has(claimId)) {
+                    this.addNeuron(
+                        {
+                            id: claimId,
+                            title: pair.title,
+                            type: "idea",
+                            domain: "Debated",
+                            tags: [],
+                            description: pair.claim,
+                            origin: "ai",
+                            stance: { agent: "claim", color: CLAIM_COLOR },
+                        },
+                        claimPos
+                    );
+                }
+
+                if (!this.graph.byId.has(rebuttalId)) {
+                    this.addNeuron(
+                        {
+                            id: rebuttalId,
+                            title: `Re: ${pair.title}`,
+                            type: "idea",
+                            domain: "Debated",
+                            tags: [],
+                            description: pair.rebuttal,
+                            origin: "ai",
+                            stance: { agent: "rebuttal", color: REBUTTAL_COLOR },
+                        },
+                        rebuttalPos
+                    );
+                }
+
+                this.addConnection(centerId, claimId, "reference", 0.6);
+                this.addConnection(centerId, rebuttalId, "reference", 0.6);
+                this.addConnection(claimId, rebuttalId, "conflict", 0.9);
+
+                claimIds.push(claimId);
+                rebuttalIds.push(rebuttalId);
+            });
+
+            // Interlink every neuron with the others on its own side --
+            // full mesh, not just a chain, so a "for" argument reads as
+            // connected to every other "for" argument (and likewise for
+            // "against"), each pair of same-side neurons wired together
+            // with an "allied" edge instead of "conflict".
+            const meshLink = (ids: string[]) => {
+                for (let a = 0; a < ids.length; a++) {
+                    for (let b = a + 1; b < ids.length; b++) {
+                        this.addConnection(ids[a], ids[b], "allied", 0.5);
+                    }
+                }
+            };
+            meshLink(claimIds);
+            meshLink(rebuttalIds);
+
+            this.set({ debating: null });
+            if (!originId) this.select(centerId);
+        } catch (err) {
+            this.set({
+                debating: null,
+                debateError: err instanceof Error ? err.message : "Debate generation failed.",
+            });
+        }
+    }
+
     // ---- AI chat panel ----
 
     toggleChat(open?: boolean) {
-        this.set({ chatOpen: open ?? !this.state.chatOpen, commandPaletteOpen: false });
+        this.set({ chatOpen: open ?? !this.state.chatOpen, commandPaletteOpen: false, debateModeOpen: false });
     }
 
     clearChat() {
@@ -592,6 +775,91 @@ class Store {
 
     toggleCommandPalette(open?: boolean) {
         this.set({ commandPaletteOpen: open ?? !this.state.commandPaletteOpen });
+    }
+
+    // ---- Debate Mode (live, two-sided, dock toolbar) ----
+
+    toggleDebateMode(open?: boolean) {
+        const next = open ?? !this.state.debateModeOpen;
+        this.set({
+            debateModeOpen: next,
+            chatOpen: false,
+            commandPaletteOpen: false,
+            // Debate Mode is a full-screen takeover, not another panel
+            // competing for space -- drop any selection so InfoPanel
+            // (right third of the screen) can't be open underneath it
+            // and collide with the debate columns.
+            selectedId: next ? null : this.state.selectedId,
+        });
+        if (!next) this.stopDebateMode();
+    }
+
+    async startDebateMode(rawTopic: string) {
+        const topic = rawTopic.trim();
+        if (!topic || this.state.debateModeRunning) return;
+
+        const token = ++this.debateRunToken;
+        this.set({
+            debateModeTopic: topic,
+            debateModeLog: [],
+            debateModeRunning: true,
+            debateModeError: null,
+            debateGlowSide: null,
+            debateGlowAt: 0,
+        });
+        await this.runDebateLoop(topic, token);
+    }
+
+    // Cancels any in-flight loop (by invalidating its token, checked
+    // between turns) and lets the current turn's request finish quietly
+    // in the background rather than aborting mid-fetch.
+    stopDebateMode() {
+        if (!this.state.debateModeRunning) return;
+        this.debateRunToken++;
+        this.set({ debateModeRunning: false });
+    }
+
+    // Alternates Groq's main model ("for") and a second, faster Groq
+    // model ("against") turns, each one reading the transcript so far, up to a fixed cap
+    // so an unattended debate can't run forever. Mirrors the shape of
+    // `debateTopic`'s claim/rebuttal generation but produces a live, growing transcript
+    // instead of a one-shot batch, and drives `debateGlowSide` /
+    // `debateGlowAt` after every turn so the scene can react.
+    private async runDebateLoop(topic: string, token: number) {
+        const MAX_TURNS = 14;
+        // Kept short -- the sky text and glow are meant to read as a
+        // fast, live back-and-forth, not a slow reveal. The request/
+        // response latency itself is already the main pacing; this just
+        // stops the next line popping in before the last one has had a
+        // beat to be read.
+        const TURN_PAUSE_MS = 350;
+        let agent: "for" | "against" = "for";
+
+        for (let i = 0; i < MAX_TURNS; i++) {
+            if (token !== this.debateRunToken) return;
+
+            try {
+                const { text } = await aiDebateTurn(topic, agent, this.state.debateModeLog);
+                if (token !== this.debateRunToken) return;
+                this.set({
+                    debateModeLog: [...this.state.debateModeLog, { agent, text }],
+                    debateGlowSide: agent,
+                    debateGlowAt: Date.now(),
+                });
+            } catch (err) {
+                if (token !== this.debateRunToken) return;
+                this.set({
+                    debateModeRunning: false,
+                    debateModeError: err instanceof Error ? err.message : "Debate failed.",
+                });
+                return;
+            }
+
+            agent = agent === "for" ? "against" : "for";
+            await new Promise((resolve) => setTimeout(resolve, TURN_PAUSE_MS));
+        }
+
+        if (token === this.debateRunToken) this.set({ debateModeRunning: false });
     }
 
     // ---- Context menu (right-click on a neuron) ----
@@ -633,6 +901,39 @@ class Store {
             base.y + (Math.random() - 0.5) * 2,
             base.z + Math.sin(angle) * radius
         );
+    }
+
+    // Places a claim/rebuttal pair as mirrored points on opposing arcs
+    // around the debated topic -- claims sweep a semicircle on one side,
+    // rebuttals sweep the mirrored semicircle on the other, so the two
+    // "sides" of the debate read as opposing clusters facing each other
+    // rather than just an alternating ring.
+    private duoPosition(
+        center: THREE.Vector3 | undefined,
+        i: number,
+        total: number
+    ): { claimPos: THREE.Vector3; rebuttalPos: THREE.Vector3 } {
+        const base = center ?? new THREE.Vector3();
+        const spread = Math.PI * 0.6;
+        const t = total > 1 ? i / (total - 1) : 0.5;
+        const arcAngle = (t - 0.5) * spread;
+        const radius = 4 + Math.random() * 1.5;
+        const rise = (Math.random() - 0.5) * 2.4;
+
+        const claimPos = new THREE.Vector3(
+            base.x + Math.cos(arcAngle) * radius,
+            base.y + rise,
+            base.z + Math.sin(arcAngle) * radius
+        );
+
+        const oppositeAngle = arcAngle + Math.PI;
+        const rebuttalPos = new THREE.Vector3(
+            base.x + Math.cos(oppositeAngle) * radius,
+            base.y - rise,
+            base.z + Math.sin(oppositeAngle) * radius
+        );
+
+        return { claimPos, rebuttalPos };
     }
 
     private addNeuron(neuron: Neuron, position: THREE.Vector3) {

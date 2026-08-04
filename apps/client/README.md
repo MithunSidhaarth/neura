@@ -13,6 +13,23 @@ cp .env.local.example .env.local
 Everything else (the graph, search, Wikipedia expansion) works without
 this — only the AI-specific actions will show an error until it's set.
 
+"Expand topic with AI" (the button in the info panel that used to be
+labeled "Debate with AI") also runs on `GROQ_API_KEY` -- no separate
+key needed. Groq's main model stakes out 3-4 claims about the selected
+topic, then a second, faster Groq model rebuts each one directly. (This
+used to run the rebuttal side on a separate provider, Cerebras, so a
+chatty debate wouldn't share Groq's per-minute rate-limit budget with
+every other AI feature in the app -- that provider's free-tier account
+hit its billing quota, so both debate surfaces now run on Groq alone;
+see the MODEL_AGAINST comment in `app/api/ai/route.ts` for the current
+trade-off.) Each claim/rebuttal pair is dropped into the graph as a
+mirrored, color-coded pair of neurons linked by a crackling "conflict"
+edge, and every neuron on the same side (all claims, all rebuttals) is
+additionally interlinked with the others on its side, so each side
+reads as its own connected, same-colored cluster. Live Debate Mode (the
+"Debate" toolbar button) uses the same two-model split for the same
+reason.
+
 ## Getting Started
 
 First, run the development server:

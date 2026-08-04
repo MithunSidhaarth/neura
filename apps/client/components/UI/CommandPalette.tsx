@@ -112,7 +112,7 @@ export default function CommandPalette() {
                             </button>
                             <button className={styles.row} onClick={expandAi} disabled={!!aiExpanding}>
                                 <span className={styles.rowTitle}>
-                                    {aiExpanding ? `Generating "${aiExpanding}"…` : `Expand "${trimmed}" with AI`}
+                                    {aiExpanding ? `Searching "${aiExpanding}"…` : `Search "${trimmed}" with AI`}
                                 </span>
                                 <span className={styles.rowMeta}>Groq-generated concepts, for ideas Wikipedia won&apos;t have</span>
                             </button>

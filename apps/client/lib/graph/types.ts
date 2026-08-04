@@ -25,7 +25,26 @@ export type ConnectionType =
     | "reference"
     | "citation"
     | "shared_technology"
-    | "shared_topic";
+    | "shared_topic"
+    // A claim/rebuttal pair from "Debate with AI" -- rendered distinctly
+    // (crackling two-tone edge) rather than as an ordinary relation,
+    // since it represents disagreement rather than affinity.
+    | "conflict"
+    // Links two neurons on the *same* side of a "Debate with AI" (two
+    // claims, or two rebuttals) -- rendered as a steady edge tinted in
+    // that side's stance color, so all claims read as one interlinked
+    // pink cluster and all rebuttals as one interlinked cyan cluster,
+    // distinct from the crackling "conflict" edge between opposing sides.
+    | "allied";
+
+// Present on claim/rebuttal neurons created by "Debate with AI"
+// (EngineStore.debateTopic). Lets the renderer tint each side of a
+// debate its own color without the scene layer needing to know
+// anything about debates -- it just reads `stance.color`.
+export interface NeuronStance {
+    agent: "claim" | "rebuttal";
+    color: string;
+}
 
 export interface Neuron {
     id: string;
@@ -35,6 +54,7 @@ export interface Neuron {
     tags: string[];
     description: string;
     year?: number;
+    stance?: NeuronStance;
     // Present when this neuron was created at runtime rather than from
     // the hand-written seed dataset: "wiki" for a live Wikipedia lookup,
     // "ai" for a Groq-generated concept (used when Wikipedia has no

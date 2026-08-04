@@ -43,6 +43,12 @@
     font-size: 14px;
 }
 
+.glyphSvg {
+    flex: none;
+    display: block;
+    filter: drop-shadow(0 0 4px rgba(255, 47, 176, 0.3)) drop-shadow(0 0 4px rgba(22, 224, 255, 0.3));
+}
+
 .label {
     font-family: var(--font-geist-sans), sans-serif;
     font-size: 12.5px;

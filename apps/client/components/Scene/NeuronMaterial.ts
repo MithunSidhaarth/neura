@@ -44,6 +44,14 @@ export function createNeuronMaterial() {
             // larger multiplier so they read as more prominent.
             attribute float aSize;
 
+            // "Debate with AI" stance tint: aStance is 1 on a claim or
+            // rebuttal neuron and 0 on everything else; aStanceColor
+            // carries that neuron's agent color. Blended into the
+            // rim/core in the fragment shader on top of the existing
+            // signal/energy tinting.
+            attribute float aStance;
+            attribute vec3 aStanceColor;
+
             // ==========================================
             // VARYINGS
             // ==========================================
@@ -52,6 +60,8 @@ export function createNeuronMaterial() {
             varying float vRandom;    // For per-particle variance
             varying float vSignal;
             varying float vDim;
+            varying float vStance;
+            varying vec3 vStanceColor;
 
             // ==========================================
             // UTILITIES (Optimized)
@@ -89,6 +99,8 @@ export function createNeuronMaterial() {
                 vRandom = rnd;
                 vSignal = aSignal;
                 vDim = aDim;
+                vStance = aStance;
+                vStanceColor = aStanceColor;
                 
                 // [12][13] Calculate primary pulse and secondary random flicker
                 float timeOffset = uTime * uPulseSpeed + rnd * 6.28;
@@ -142,6 +154,8 @@ export function createNeuronMaterial() {
             varying float vRandom;
             varying float vSignal;
             varying float vDim;
+            varying float vStance;
+            varying vec3 vStanceColor;
             
             uniform float uBrightness;
             uniform float uGlowStrength;
@@ -187,6 +201,13 @@ export function createNeuronMaterial() {
                 float fakeZ = sqrt(max(0.0, 1.0 - (2.0 * d) * (2.0 * d)));
                 float rim = pow(1.0 - fakeZ, 3.0) * energy;
                 color += particleActive * rim * 1.5; // Add bright rim lighting
+
+                // "Debate with AI" stance tint: blend the agent's
+                // color into the rim and add a colored core glow so a
+                // claim neuron and its rebuttal read as opposed colors
+                // at a glance, on top of the existing signal tinting.
+                color = mix(color, vStanceColor, vStance * 0.55);
+                color += vStanceColor * rim * vStance * 1.2;
 
                 // Base brightness adjustments
                 color *= 0.75 + energy * 0.45;

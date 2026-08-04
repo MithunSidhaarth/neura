@@ -37,6 +37,19 @@ function createConnectionMaterial() {
             attribute float aActive;
             attribute float aDim;
 
+            // "Debate with AI" conflict edges: aTension is 1 on a
+            // claim<->rebuttal link and 0 on every ordinary edge; aColor
+            // carries each endpoint's stance color so the fragment
+            // shader can render a two-tone gradient across the segment.
+            attribute float aTension;
+            // "Debate with AI" allied edges: aAllied is 1 on a
+            // claim<->claim or rebuttal<->rebuttal link (same-side
+            // neurons interlinked with each other) and 0 otherwise.
+            // Shares aColor with aTension -- the two are mutually
+            // exclusive per edge, so one color attribute covers both.
+            attribute float aAllied;
+            attribute vec3 aColor;
+
             varying float vProgress;
             varying float vPhase;
             varying float vSpeed;
@@ -45,6 +58,9 @@ function createConnectionMaterial() {
             varying vec3 vWorldPosition;
             varying float vActive;
             varying float vDim;
+            varying float vTension;
+            varying float vAllied;
+            varying vec3 vColor;
 
             void main() {
 
@@ -54,6 +70,9 @@ function createConnectionMaterial() {
                 vDelay = aDelay;
                 vActive = aActive;
                 vDim = aDim;
+                vTension = aTension;
+                vAllied = aAllied;
+                vColor = aColor;
 
                 vec4 worldPosition = modelMatrix * vec4(position, 1.0);
                 vWorldPosition = worldPosition.xyz;
@@ -77,6 +96,9 @@ function createConnectionMaterial() {
             varying vec3 vWorldPosition;
             varying float vActive;
             varying float vDim;
+            varying float vTension;
+            varying float vAllied;
+            varying vec3 vColor;
 
             const vec3 LINK_COLOR = vec3(0.32, 0.42, 0.52);
             const vec3 SIGNAL_COLOR = vec3(0.75, 0.95, 1.0);
@@ -112,6 +134,41 @@ function createConnectionMaterial() {
                 float alpha = baseAlpha + signal * 0.6 + leadingEdge * 0.5 + cursorGlow * 0.3;
                 alpha += vActive * 0.5;
 
+                // --- Conflict edges (Debate with AI): crackling two-tone
+                // gradient between the claim/rebuttal colors, with a
+                // strobing white-hot flashpoint where the two sides meet
+                // at the midpoint. ---
+                if (vTension > 0.5) {
+                    float crackleA = sin(vProgress * 40.0 + uTime * 14.0) * 0.5 + 0.5;
+                    float crackleB = sin(vProgress * 17.0 - uTime * 9.0) * 0.5 + 0.5;
+                    float crackle = crackleA * crackleB;
+
+                    float distFromMid = abs(vProgress - 0.5);
+                    float flashpoint = smoothstep(0.16, 0.0, distFromMid);
+                    float strobe = sin(uTime * 22.0) * 0.5 + 0.5;
+
+                    vec3 conflictColor = mix(color, vColor, 0.85);
+                    conflictColor += vColor * crackle * 0.5;
+                    conflictColor = mix(conflictColor, vec3(1.0), flashpoint * strobe * 0.9);
+
+                    color = conflictColor;
+                    alpha += flashpoint * strobe * 0.6 + crackle * 0.15;
+                } else if (vAllied > 0.5) {
+                    // Same-side "Debate with AI" link (claim<->claim or
+                    // rebuttal<->rebuttal): a steady tint in that side's
+                    // stance color plus a gentle in-phase shimmer, but
+                    // no strobe/flashpoint -- these neurons agree, so
+                    // the edge should read as calm affinity rather than
+                    // the crackling tension of a "conflict" edge.
+                    float shimmer = sin(vProgress * 10.0 + uTime * 1.6) * 0.5 + 0.5;
+
+                    vec3 alliedColor = mix(color, vColor, 0.65);
+                    alliedColor += vColor * shimmer * 0.18;
+
+                    color = alliedColor;
+                    alpha += 0.18 + shimmer * 0.1;
+                }
+
                 // Depth fade, matching the neuron field's atmospheric falloff.
                 float depthFadeOut = 1.0 - smoothstep(150.0, 350.0, vViewZ);
                 float cameraFadeIn = smoothstep(1.0, 20.0, vViewZ);
@@ -144,7 +201,7 @@ export default function NeuralConnections() {
         };
     }, [material]);
 
-    const { positions, progress, phase, speed, delay, active, dim, edgeIds, edgeMeta } = useMemo(() => {
+    const { positions, progress, phase, speed, delay, active, dim, tension, allied, edgeColor, edgeIds, edgeMeta } = useMemo(() => {
 
         const { connections } = getNeuralGraph();
 
@@ -155,6 +212,9 @@ export default function NeuralConnections() {
         const delayArray = new Float32Array(connections.length * 2);
         const activeArray = new Float32Array(connections.length * 2);
         const dimArray = new Float32Array(connections.length * 2).fill(1);
+        const tensionArray = new Float32Array(connections.length * 2);
+        const alliedArray = new Float32Array(connections.length * 2);
+        const colorArray = new Float32Array(connections.length * 2 * 3);
         const ids = connections.map((c) => [c.fromId, c.toId] as [string, string]);
         const meta = connections.map((c) => ({
             fromId: c.fromId,
@@ -190,6 +250,22 @@ export default function NeuralConnections() {
             delayArray[vBase] = c.delay;
             delayArray[vBase + 1] = c.delay;
 
+            tensionArray[vBase] = c.conflict ? 1 : 0;
+            tensionArray[vBase + 1] = c.conflict ? 1 : 0;
+
+            alliedArray[vBase] = c.allied ? 1 : 0;
+            alliedArray[vBase + 1] = c.allied ? 1 : 0;
+
+            if ((c.conflict || c.allied) && c.fromColor && c.toColor) {
+                colorArray[base] = c.fromColor.r;
+                colorArray[base + 1] = c.fromColor.g;
+                colorArray[base + 2] = c.fromColor.b;
+
+                colorArray[base + 3] = c.toColor.r;
+                colorArray[base + 4] = c.toColor.g;
+                colorArray[base + 5] = c.toColor.b;
+            }
+
         });
 
         return {
@@ -200,6 +276,9 @@ export default function NeuralConnections() {
             delay: delayArray,
             active: activeArray,
             dim: dimArray,
+            tension: tensionArray,
+            allied: alliedArray,
+            edgeColor: colorArray,
             edgeIds: ids,
             edgeMeta: meta,
         };
@@ -342,6 +421,30 @@ export default function NeuralConnections() {
                     array={dim}
                     count={dim.length}
                     itemSize={1}
+                />
+
+                <bufferAttribute
+                    attach="attributes-aTension"
+                    args={[tension, 1]}
+                    array={tension}
+                    count={tension.length}
+                    itemSize={1}
+                />
+
+                <bufferAttribute
+                    attach="attributes-aAllied"
+                    args={[allied, 1]}
+                    array={allied}
+                    count={allied.length}
+                    itemSize={1}
+                />
+
+                <bufferAttribute
+                    attach="attributes-aColor"
+                    args={[edgeColor, 3]}
+                    array={edgeColor}
+                    count={edgeColor.length / 3}
+                    itemSize={3}
                 />
 
             </bufferGeometry>

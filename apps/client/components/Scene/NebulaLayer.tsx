@@ -3,6 +3,14 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { engineStore, DEBATE_FOR_COLOR, DEBATE_AGAINST_COLOR } from "@/engine/store/EngineStore";
+
+const DEBATE_FOR_THREE_COLOR = new THREE.Color(DEBATE_FOR_COLOR);
+const DEBATE_AGAINST_THREE_COLOR = new THREE.Color(DEBATE_AGAINST_COLOR);
+// How long, in ms, a single debate turn's pulse takes to fade back to
+// the base palette -- roughly one turn's worth of reading time, so the
+// sky is still glowing the right color while its bubble is on screen.
+const DEBATE_GLOW_FADE_MS = 3200;
 
 // A large sphere surrounding the whole scene, rendered from the inside
 // (BackSide) with a soft noise-based cloud pattern. Previously capped at
@@ -26,6 +34,13 @@ function createNebulaMaterial() {
         blending: THREE.AdditiveBlending,
         uniforms: {
             uTime: { value: 0 },
+            // Driven live from Debate Mode -- see the useFrame below.
+            // uGlowColor is pink (FOR) or cyan (AGAINST); uGlowStrength
+            // eases up on every turn and decays back to 0 between them,
+            // so the nebula visibly breathes with whichever side just
+            // spoke instead of only doing so through the fixed palette.
+            uGlowColor: { value: new THREE.Color(0, 0, 0) },
+            uGlowStrength: { value: 0 },
         },
         vertexShader: `
             varying vec3 vPos;
@@ -37,6 +52,8 @@ function createNebulaMaterial() {
         `,
         fragmentShader: `
             uniform float uTime;
+            uniform vec3 uGlowColor;
+            uniform float uGlowStrength;
             varying vec3 vPos;
 
             float hash(vec3 p) {
@@ -95,10 +112,16 @@ function createNebulaMaterial() {
                 vec3 color = mix(COLOR_A, COLOR_B, density);
                 color = mix(color, COLOR_C, wisp * 0.6);
 
+                // Debate Mode glow: blends toward the live debate color
+                // and brightens the cloud where it's already dense, so
+                // the tint reads as the nebula itself lighting up rather
+                // than a flat color wash over everything.
+                color = mix(color, uGlowColor, uGlowStrength * (0.35 + density * 0.35));
+
                 // Opened up from the previous 0.05 ceiling so the clouds
                 // actually read against the black background instead of
                 // just tinting it.
-                float alpha = density * 0.22 + wisp * 0.16;
+                float alpha = density * 0.22 + wisp * 0.16 + uGlowStrength * density * 0.3;
 
                 gl_FragColor = vec4(color, alpha);
 
@@ -127,6 +150,19 @@ export default function NebulaLayer() {
     useFrame(({ clock }) => {
 
         material.uniforms.uTime.value = clock.elapsedTime;
+
+        // Debate Mode glow: read the store directly (same pattern
+        // LayeredUniverse already uses for `selectedId`) rather than
+        // wiring this through React state/props -- it's a per-frame
+        // visual read, not something that should trigger re-renders.
+        const { debateGlowSide, debateGlowAt } = engineStore.getState();
+        const age = debateGlowAt ? Date.now() - debateGlowAt : Infinity;
+        const target = debateGlowSide && age < DEBATE_GLOW_FADE_MS ? 1 - age / DEBATE_GLOW_FADE_MS : 0;
+        material.uniforms.uGlowStrength.value += (target - material.uniforms.uGlowStrength.value) * 0.08;
+        if (debateGlowSide) {
+            const targetColor = debateGlowSide === "for" ? DEBATE_FOR_THREE_COLOR : DEBATE_AGAINST_THREE_COLOR;
+            (material.uniforms.uGlowColor.value as THREE.Color).lerp(targetColor, 0.08);
+        }
 
         if (!ref.current)
             return;

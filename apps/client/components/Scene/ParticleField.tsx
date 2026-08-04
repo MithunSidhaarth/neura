@@ -42,7 +42,7 @@ export default function ParticleField() {
         };
     }, [material]);
 
-    const { positions, signals, dims, sizes, clusterIds } = useMemo(() => {
+    const { positions, signals, dims, sizes, stanceColors, stances, clusterIds } = useMemo(() => {
 
         const { clusters, connections } = getNeuralGraph();
         const count = clusters.length;
@@ -50,6 +50,11 @@ export default function ParticleField() {
         const array = new Float32Array(count * 3);
         const signalArray = new Float32Array(count);
         const dimArray = new Float32Array(count).fill(1);
+        // Claim/rebuttal neurons from "Debate with AI" carry a stance
+        // color; everything else leaves stanceArray at 0 so the shader's
+        // existing sleep/active tinting is untouched.
+        const stanceColorArray = new Float32Array(count * 3);
+        const stanceArray = new Float32Array(count);
         // Baseline of 1.6 rather than 1 -- neurons are the actual graph
         // content and should read as clearly larger than the decorative
         // BackgroundStars field even before any importance bonus is
@@ -77,6 +82,19 @@ export default function ParticleField() {
             // it should read as "a bit more important," not dominate the
             // field.
             sizeArray[i] = NEURON_BASE_SIZE + Math.min(Math.sqrt(d), 5) * 0.5;
+
+            if (cluster.stanceColor) {
+                const c = new THREE.Color(cluster.stanceColor);
+                stanceColorArray[i * 3] = c.r;
+                stanceColorArray[i * 3 + 1] = c.g;
+                stanceColorArray[i * 3 + 2] = c.b;
+                stanceArray[i] = 1;
+                // "Debate with AI" claim/rebuttal neurons read as twice
+                // the size of an ordinary neuron -- they're the whole
+                // point of the debate view, so they should visually
+                // anchor the cluster rather than blend in at leaf size.
+                sizeArray[i] *= 2;
+            }
         });
 
         neuronPositions = array;
@@ -86,6 +104,8 @@ export default function ParticleField() {
             signals: signalArray,
             dims: dimArray,
             sizes: sizeArray,
+            stanceColors: stanceColorArray,
+            stances: stanceArray,
             clusterIds: clusters.map((c) => c.id),
         };
 
@@ -189,6 +209,22 @@ export default function ParticleField() {
                     args={[sizes, 1]}
                     array={sizes}
                     count={sizes.length}
+                    itemSize={1}
+                />
+
+                <bufferAttribute
+                    attach="attributes-aStanceColor"
+                    args={[stanceColors, 3]}
+                    array={stanceColors}
+                    count={stanceColors.length / 3}
+                    itemSize={3}
+                />
+
+                <bufferAttribute
+                    attach="attributes-aStance"
+                    args={[stances, 1]}
+                    array={stances}
+                    count={stances.length}
                     itemSize={1}
                 />
 

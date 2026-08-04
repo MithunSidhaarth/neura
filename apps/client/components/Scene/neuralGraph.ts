@@ -19,6 +19,10 @@ export type NeuralClusterNode = {
     title: string;
     neuronType: string;
     domain: string;
+    // Set on claim/rebuttal neurons created by "Debate with AI" -- lets
+    // ParticleField tint the neuron's rim/core without knowing anything
+    // about debates itself.
+    stanceColor: string | null;
 };
 
 export type NeuralConnectionEdge = {
@@ -31,7 +35,22 @@ export type NeuralConnectionEdge = {
     fromId: string;
     toId: string;
     weight: number;
+    // True for "conflict" edges (claim <-> rebuttal from "Debate with
+    // AI"). fromColor/toColor carry each endpoint's stance color so
+    // NeuralConnections can render a two-tone gradient instead of the
+    // ordinary single-color link.
+    conflict: boolean;
+    // True for "allied" edges (claim <-> claim, or rebuttal <-> rebuttal
+    // from "Debate with AI") -- same idea as `conflict` but a steady
+    // single-side tint instead of a two-tone crackle, since both
+    // endpoints share the same stance color.
+    allied: boolean;
+    fromColor: THREE.Color | null;
+    toColor: THREE.Color | null;
 };
+
+const DEFAULT_CLAIM_COLOR = new THREE.Color("#ff2fb0");
+const DEFAULT_REBUTTAL_COLOR = new THREE.Color("#16e0ff");
 
 // Total time (seconds) it takes the connection graph to fully "grow in"
 // after mount, staggered per-connection.
@@ -46,6 +65,7 @@ function toClusterNode(p: PositionedNeuron): NeuralClusterNode {
         title: p.neuron.title,
         neuronType: p.neuron.type,
         domain: p.neuron.domain,
+        stanceColor: p.neuron.stance?.color ?? null,
     };
 }
 
@@ -53,6 +73,9 @@ function toConnectionEdge(c: PositionedConnection): NeuralConnectionEdge {
     const a = c.from.position;
     const b = c.to.position;
     const length = a.distanceTo(b);
+    const conflict = c.type === "conflict";
+    const allied = c.type === "allied";
+    const tinted = conflict || allied;
     return {
         a,
         b,
@@ -65,6 +88,18 @@ function toConnectionEdge(c: PositionedConnection): NeuralConnectionEdge {
         fromId: c.from.neuron.id,
         toId: c.to.neuron.id,
         weight: c.weight,
+        conflict,
+        allied,
+        fromColor: tinted
+            ? c.from.neuron.stance
+                ? new THREE.Color(c.from.neuron.stance.color)
+                : DEFAULT_CLAIM_COLOR.clone()
+            : null,
+        toColor: tinted
+            ? c.to.neuron.stance
+                ? new THREE.Color(c.to.neuron.stance.color)
+                : DEFAULT_REBUTTAL_COLOR.clone()
+            : null,
     };
 }
 

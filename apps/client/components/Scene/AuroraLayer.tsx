@@ -3,6 +3,11 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
+import { engineStore, DEBATE_FOR_COLOR, DEBATE_AGAINST_COLOR } from "@/engine/store/EngineStore";
+
+const DEBATE_FOR_THREE_COLOR = new THREE.Color(DEBATE_FOR_COLOR);
+const DEBATE_AGAINST_THREE_COLOR = new THREE.Color(DEBATE_AGAINST_COLOR);
+const DEBATE_GLOW_FADE_MS = 3200;
 
 // Slow-moving aurora curtains wrapped around the scene, sitting just
 // outside NebulaLayer's cloud sphere. Where NebulaLayer reads as diffuse
@@ -23,6 +28,11 @@ function createAuroraMaterial() {
         blending: THREE.AdditiveBlending,
         uniforms: {
             uTime: { value: 0 },
+            // Same live Debate Mode glow as NebulaLayer -- see the
+            // useFrame below and NebulaLayer's comment for why it's
+            // read from the store directly instead of via props.
+            uGlowColor: { value: new THREE.Color(0, 0, 0) },
+            uGlowStrength: { value: 0 },
         },
         vertexShader: `
             varying vec3 vPos;
@@ -33,6 +43,8 @@ function createAuroraMaterial() {
         `,
         fragmentShader: `
             uniform float uTime;
+            uniform vec3 uGlowColor;
+            uniform float uGlowStrength;
             varying vec3 vPos;
 
             float hash(vec2 p) {
@@ -87,7 +99,13 @@ function createAuroraMaterial() {
                 vec3 color = mix(CURTAIN_A, CURTAIN_B, curtain);
                 color = mix(color, CURTAIN_C, shimmer * 0.75);
 
-                float alpha = curtain * 0.15 + shimmer * 0.12;
+                // Debate Mode glow: the curtains themselves shift toward
+                // whichever side just spoke and brighten a little,
+                // reading as the aurora reacting rather than a filter
+                // laid over it.
+                color = mix(color, uGlowColor, uGlowStrength * (0.4 + curtain * 0.3));
+
+                float alpha = curtain * 0.15 + shimmer * 0.12 + uGlowStrength * band * 0.22;
 
                 gl_FragColor = vec4(color, alpha);
 
@@ -113,6 +131,16 @@ export default function AuroraLayer() {
 
     useFrame(({ clock }) => {
         material.uniforms.uTime.value = clock.elapsedTime;
+
+        const { debateGlowSide, debateGlowAt } = engineStore.getState();
+        const age = debateGlowAt ? Date.now() - debateGlowAt : Infinity;
+        const target = debateGlowSide && age < DEBATE_GLOW_FADE_MS ? 1 - age / DEBATE_GLOW_FADE_MS : 0;
+        material.uniforms.uGlowStrength.value += (target - material.uniforms.uGlowStrength.value) * 0.08;
+        if (debateGlowSide) {
+            const targetColor = debateGlowSide === "for" ? DEBATE_FOR_THREE_COLOR : DEBATE_AGAINST_THREE_COLOR;
+            (material.uniforms.uGlowColor.value as THREE.Color).lerp(targetColor, 0.08);
+        }
+
         if (!ref.current) return;
         // Slightly faster and opposite direction from NebulaLayer's drift
         // so the two layers don't lock-step -- reads as independent depth.

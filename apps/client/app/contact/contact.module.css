@@ -1,0 +1,187 @@
+.page {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    cursor: auto;
+    background: #020202;
+    background-image:
+        radial-gradient(ellipse 900px 500px at 85% -5%, rgba(90, 130, 255, 0.16), transparent 60%),
+        radial-gradient(ellipse 700px 500px at 0% 15%, rgba(255, 47, 176, 0.09), transparent 55%);
+}
+
+.container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 96px 32px 140px;
+}
+
+.backLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+    color: rgba(190, 210, 225, 0.55);
+    text-decoration: none;
+    margin-bottom: 48px;
+    transition: color 0.2s ease;
+}
+
+.backLink:hover {
+    color: rgba(150, 195, 255, 0.95);
+}
+
+.eyebrow {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    color: rgba(150, 195, 255, 0.85);
+    margin-bottom: 20px;
+    text-shadow: 0 0 24px rgba(120, 180, 255, 0.5);
+}
+
+.title {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: clamp(36px, 6vw, 56px);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: rgba(240, 246, 252, 0.97);
+    margin: 0 0 20px;
+}
+
+.subtitle {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+    color: rgba(200, 212, 224, 0.72);
+    margin: 0 0 56px;
+    max-width: 480px;
+}
+
+/* ---- Primary CTA panel ---- */
+
+.primaryCard {
+    background: rgba(14, 16, 20, 0.5);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
+    padding: 32px 32px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 0 60px rgba(90, 160, 255, 0.06);
+}
+
+.primaryCardText {
+    font-family: var(--font-geist-sans), sans-serif;
+}
+
+.primaryCardTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(238, 244, 250, 0.95);
+    margin: 0 0 6px;
+}
+
+.primaryCardBody {
+    font-size: 13.5px;
+    color: rgba(195, 208, 220, 0.6);
+    margin: 0;
+    max-width: 360px;
+    line-height: 1.55;
+}
+
+.primaryCardLink {
+    flex: none;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    color: rgb(6, 6, 6);
+    text-decoration: none;
+    background: rgba(150, 195, 255, 0.9);
+    padding: 13px 22px;
+    border-radius: 10px;
+    transition: background 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+.primaryCardLink:hover {
+    background: rgba(180, 215, 255, 0.98);
+    transform: translateY(-1px);
+}
+
+/* ---- Channel list ---- */
+
+.channels {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 520px) {
+    .channels { grid-template-columns: 1fr; }
+}
+
+.channel {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    text-decoration: none;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.channel:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(150, 195, 255, 0.25);
+}
+
+.channelGlyph {
+    font-size: 16px;
+    flex: none;
+    filter: drop-shadow(0 0 8px rgba(140, 190, 255, 0.35));
+}
+
+.channelText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.channelLabel {
+    font-family: var(--font-geist-sans), sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: rgba(232, 240, 246, 0.92);
+}
+
+.channelHandle {
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11.5px;
+    color: rgba(190, 205, 218, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.note {
+    margin-top: 32px;
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: rgba(190, 205, 218, 0.4);
+}

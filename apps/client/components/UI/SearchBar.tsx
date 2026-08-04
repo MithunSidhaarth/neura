@@ -103,7 +103,7 @@ export default function SearchBar() {
                                 disabled={!!aiExpanding}
                             >
                                 <span className={styles.resultTitle}>
-                                    {aiExpanding ? `Generating “${aiExpanding}”…` : `Expand “${trimmed}” with AI`}
+                                    {aiExpanding ? `Searching “${aiExpanding}”…` : `Search “${trimmed}” with AI`}
                                 </span>
                                 <span className={styles.resultMeta}>
                                     for ideas &amp; jargon Wikipedia won&apos;t have

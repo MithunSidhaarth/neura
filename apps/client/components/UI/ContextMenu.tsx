@@ -37,7 +37,7 @@ export default function ContextMenu() {
                 disabled={!!aiExpanding}
                 onClick={() => { engineStore.aiExpandTopic(node.neuron.wikiTitle ?? node.neuron.title, id); engineStore.closeContextMenu(); }}
             >
-                Expand with AI
+                Search with AI
             </button>
             <button
                 className={styles.item}
